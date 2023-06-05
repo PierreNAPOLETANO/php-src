@@ -50,16 +50,7 @@ function stream_notification_callback($notification_code, $severity, $message, $
 
 isset($argv[1], $argv[2]) or usage($argv);
 
-if (!isset($_ENV['http_proxy'])) {
-    $copt = null;
-} else {
-    $copt = array(
-        'http' => array(
-            'proxy' => preg_replace('/^http/i', 'tcp', $_ENV['http_proxy']),
-            'request_fulluri' => true,
-        ),
-    );
-}
+$copt = !isset($_ENV['http_proxy']) ? null : ['http' => ['proxy' => preg_replace('/^http/i', 'tcp', $_ENV['http_proxy']), 'request_fulluri' => true,]];
 
 $ctx = stream_context_create($copt, array("notification" => "stream_notification_callback"));
 
