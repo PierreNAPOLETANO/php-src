@@ -45,11 +45,7 @@ PHPAPI int getrusage(int who, struct rusage *usage)
 		PROCESS_MEMORY_COUNTERS pmc;
 		HANDLE proc = GetCurrentProcess();
 
-		if (!GetProcessTimes(proc, &ctime, &etime, &stime, &utime)) {
-			return -1;
-		} else if(!GetProcessMemoryInfo(proc, &pmc, sizeof(pmc))) {
-			return -1;
-		}
+		if (!GetProcessTimes(proc, &ctime, &etime, &stime, &utime) || !GetProcessMemoryInfo(proc, &pmc, sizeof(pmc))) return -1;
 
 		usage_to_timeval(&stime, &usage->ru_stime);
 		usage_to_timeval(&utime, &usage->ru_utime);

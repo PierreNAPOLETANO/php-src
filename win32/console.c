@@ -69,20 +69,10 @@ PHP_WINUTIL_API BOOL php_win32_console_fileno_set_vt100(zend_long fileno, BOOL e
 
 			if (GetConsoleMode(handle, &mode)) {
 				DWORD newMode;
+				newMode = enable ? mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING : mode & ~ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 
-				if (enable) {
-					newMode = mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-				}
-				else {
-					newMode = mode & ~ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-				}
-				if (newMode == mode) {
+				if (newMode == mode || SetConsoleMode(handle, newMode)) {
 					result = TRUE;
-				}
-				else {
-					if (SetConsoleMode(handle, newMode)) {
-						result = TRUE;
-					}
 				}
 			}
 		}
@@ -113,4 +103,3 @@ PHP_WINUTIL_API BOOL php_win32_console_is_cli_sapi(void)
 {/*{{{*/
 	return strlen(sapi_module.name) >= sizeof("cli") - 1 && !strncmp(sapi_module.name, "cli", sizeof("cli") - 1);
 }/*}}}*/
-

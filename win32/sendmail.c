@@ -238,11 +238,7 @@ PHPAPI int TSendMail(const char *host, int *error, char **error_message,
 			 * string found in the lowercase headers + 5 characters to jump over
 			 * the from: */
 			pos1 = headers + (pos1 - lookup) + 5;
-			if (NULL == (pos2 = strstr(pos1, "\r\n"))) {
-				RPath = estrndup(pos1, strlen(pos1));
-			} else {
-				RPath = estrndup(pos1, pos2 - pos1);
-			}
+			RPath = (NULL == (pos2 = strstr(pos1, "\r\n")) ? estrndup(pos1, strlen(pos1)) : estrndup(pos1, pos2 - pos1);
 
 			break;
 		}
@@ -324,13 +320,7 @@ PHPAPI void TSMClose(void)
 //*******************************************************************/
 PHPAPI char *GetSMErrorText(int index)
 {
-	if (MIN_ERROR_INDEX <= index && index < MAX_ERROR_INDEX) {
-		return (ErrorMessages[index]);
-
-	} else {
-		return (ErrorMessages[UNKNOWN_ERROR]);
-
-	}
+	return MIN_ERROR_INDEX <= index && index < MAX_ERROR_INDEX ? (ErrorMessages[index]) : (ErrorMessages[UNKNOWN_ERROR]);
 }
 
 /* strtok_r like, but recognizes quoted-strings */
@@ -517,6 +507,7 @@ static int SendText(char *RPath, const char *Subject, const char *mailTo, char *
 				efree(tempMailTo);
 				return (res);
 			}
+
 			token = find_address(NULL,&token_state);
 		}
 		efree(tempMailTo);
@@ -998,13 +989,7 @@ static unsigned long GetAddr(LPSTR szHost)
 
 		/* If not an address, then try to resolve it as a hostname */
 		if ((lAddr == INADDR_NONE) && (strcmp(szHost, "255.255.255.255"))) {
-
-			lpstHost = gethostbyname(szHost);
-			if (lpstHost) {		/* success */
-				lAddr = *((u_long FAR *) (lpstHost->h_addr));
-			} else {
-				lAddr = INADDR_ANY;		/* failure */
-			}
+			lAddr = gethostbyname(szHost) ? *((u_long FAR *) (lpstHost->h_addr)) : INADDR_ANY;
 		}
 	}
 	return (lAddr);

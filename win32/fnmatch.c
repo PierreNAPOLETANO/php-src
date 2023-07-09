@@ -67,13 +67,9 @@ PHPAPI int fnmatch(const char *pattern, const char *string, int flags)
 				return (0);
 			return (*string == EOS ? 0 : FNM_NOMATCH);
 		case '?':
-			if (*string == EOS)
-				return (FNM_NOMATCH);
-			if (*string == '/' && (flags & FNM_PATHNAME))
-				return (FNM_NOMATCH);
-			if (*string == '.' && (flags & FNM_PERIOD) &&
+			if (*string == EOS || *string == '/' && (flags & FNM_PATHNAME) || (*string == '.' && (flags & FNM_PERIOD) &&
 			    (string == stringstart ||
-			    ((flags & FNM_PATHNAME) && *(string - 1) == '/')))
+			    ((flags & FNM_PATHNAME) && *(string - 1) == '/'))))
 				return (FNM_NOMATCH);
 			++string;
 			break;
@@ -91,9 +87,7 @@ PHPAPI int fnmatch(const char *pattern, const char *string, int flags)
 			/* Optimize for pattern with * at end or before /. */
 			if (c == EOS)
 				if (flags & FNM_PATHNAME)
-					return ((flags & FNM_LEADING_DIR) ||
-					    strchr(string, '/') == NULL ?
-					    0 : FNM_NOMATCH);
+					return ((flags & FNM_LEADING_DIR) || strchr(string, '/') == NULL ? 0 : FNM_NOMATCH);
 				else
 					return (0);
 			else if (c == '/' && flags & FNM_PATHNAME) {
@@ -112,13 +106,8 @@ PHPAPI int fnmatch(const char *pattern, const char *string, int flags)
 			}
 			return (FNM_NOMATCH);
 		case '[':
-			if (*string == EOS)
-				return (FNM_NOMATCH);
-			if (*string == '/' && flags & FNM_PATHNAME)
-				return (FNM_NOMATCH);
-			if ((pattern =
-			    rangematch(pattern, *string, flags)) == NULL)
-				return (FNM_NOMATCH);
+			if (*string == EOS || (*string == '/' && flags & FNM_PATHNAME)) return (FNM_NOMATCH);
+			if ((pattern = rangematch(pattern, *string, flags)) == NULL) return (FNM_NOMATCH);
 			++string;
 			break;
 		case '\\':

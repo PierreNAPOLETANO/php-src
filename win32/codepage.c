@@ -551,11 +551,7 @@ PW32CP const struct php_win32_cp *php_win32_cp_cli_do_setup(DWORD id)
 		php_win32_cp_setup();
 	}
 
-	if (id) {
-		cp = php_win32_cp_set_by_id(id);
-	} else {
-		cp = cur_cp;
-	}
+	cp = id ?  php_win32_cp_set_by_id(id) : cur_cp;
 
 	if (!cp) {
 		return NULL;
@@ -604,11 +600,8 @@ PHP_FUNCTION(sapi_windows_cp_set)
 		RETURN_THROWS();
 	}
 
-	if (php_win32_console_is_cli_sapi()) {
-		cp = php_win32_cp_cli_do_setup((DWORD)id);
-	} else {
-		cp = php_win32_cp_set_by_id((DWORD)id);
-	}
+	cp = php_win32_console_is_cli_sapi() ? php_win32_cp_cli_do_setup((DWORD)id) : php_win32_cp_set_by_id((DWORD)id);
+	
 	if (!cp) {
 		php_error_docref(NULL, E_WARNING, "Failed to switch to codepage %d", id);
 		RETURN_FALSE;

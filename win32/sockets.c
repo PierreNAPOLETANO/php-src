@@ -58,11 +58,7 @@ PHPAPI int socketpair_win32(int domain, int type, int protocol, SOCKET sock[2], 
 		goto error;
 	}
 
-	if (overlapped) {
-		sock[1] = socket(domain, type, protocol);
-	} else {
-		sock[1] = WSASocket(domain, type, protocol, NULL, 0, 0);
-	}
+	sock[1] = overlapped ? socket(domain, type, protocol) : WSASocket(domain, type, protocol, NULL, 0, 0);
 
 	if (INVALID_SOCKET == sock[1]) {
 		goto error;
