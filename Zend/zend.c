@@ -107,11 +107,7 @@ ZEND_API bool zend_rc_debug = 0;
 
 static ZEND_INI_MH(OnUpdateErrorReporting) /* {{{ */
 {
-	if (!new_value) {
-		EG(error_reporting) = E_ALL;
-	} else {
-		EG(error_reporting) = atoi(ZSTR_VAL(new_value));
-	}
+	EG(error_reporting) = !new_value ? E_ALL : atoi(ZSTR_VAL(new_value));
 	return SUCCESS;
 }
 /* }}} */
@@ -172,12 +168,8 @@ static ZEND_INI_MH(OnUpdateAssertions) /* {{{ */
 static ZEND_INI_MH(OnSetExceptionStringParamMaxLen) /* {{{ */
 {
 	zend_long i = ZEND_ATOL(ZSTR_VAL(new_value));
-	if (i >= 0 && i <= 1000000) {
-		EG(exception_string_param_max_len) = i;
-		return SUCCESS;
-	} else {
-		return FAILURE;
-	}
+	if (i >= 0 && i <= 1000000) EG(exception_string_param_max_len) = i;
+	return i >= 0 && i <= 1000000 ? SUCCESS : FAILURE;
 }
 /* }}} */
 
@@ -229,11 +221,7 @@ static ZEND_INI_MH(OnUpdateReservedStackSize) /* {{{ */
 
 static ZEND_INI_MH(OnUpdateFiberStackSize) /* {{{ */
 {
-	if (new_value) {
-		EG(fiber_stack_size) = zend_ini_parse_uquantity_warn(new_value, entry->name);
-	} else {
-		EG(fiber_stack_size) = ZEND_FIBER_DEFAULT_C_STACK_SIZE;
-	}
+	EG(fiber_stack_size) = new_value ? zend_ini_parse_uquantity_warn(new_value, entry->name) : ZEND_FIBER_DEFAULT_C_STACK_SIZE;
 	return SUCCESS;
 }
 /* }}} */
@@ -284,13 +272,8 @@ ZEND_API size_t zend_vspprintf(char **pbuf, size_t max_len, const char *format, 
 
 	smart_string_0(&buf);
 
-	if (buf.c) {
-		*pbuf = buf.c;
-		return buf.len;
-	} else {
-		*pbuf = estrndup("", 0);
-		return 0;
-	}
+	*pbuf = buf.c ?? estrndup("", 0);
+	return buf.c ? buf.len : 0;
 }
 /* }}} */
 
@@ -438,12 +421,8 @@ static void print_flat_hash(smart_str *buf, HashTable *ht) /* {{{ */
 
 ZEND_API bool zend_make_printable_zval(zval *expr, zval *expr_copy) /* {{{ */
 {
-	if (Z_TYPE_P(expr) == IS_STRING) {
-		return 0;
-	} else {
-		ZVAL_STR(expr_copy, zval_get_string_func(expr));
-		return 1;
-	}
+	if (Z_TYPE_P(expr) != IS_STRING) ZVAL_STR(expr_copy, zval_get_string_func(expr));
+	return Z_TYPE_P(expr) == IS_STRING ? 0 : 1;
 }
 /* }}} */
 
@@ -934,17 +913,13 @@ void zend_startup(zend_utility_functions *utility_functions) /* {{{ */
 	{
 		char *tmp = getenv("USE_ZEND_DTRACE");
 
+		zend_compile_file = (tmp && ZEND_ATOL(tmp)) ? dtrace_compile_file : compile_file;
+		zend_execute_ex = (tmp && ZEND_ATOL(tmp)) ? dtrace_execute_ex : execute_ex;
+		zend_execute_internal = (tmp && ZEND_ATOL(tmp)) ? dtrace_execute_internal : NULL;
+
 		if (tmp && ZEND_ATOL(tmp)) {
 			zend_dtrace_enabled = 1;
-			zend_compile_file = dtrace_compile_file;
-			zend_execute_ex = dtrace_execute_ex;
-			zend_execute_internal = dtrace_execute_internal;
-
 			zend_observer_error_register(dtrace_error_notify_cb);
-		} else {
-			zend_compile_file = compile_file;
-			zend_execute_ex = execute_ex;
-			zend_execute_internal = NULL;
 		}
 	}
 #else
@@ -1871,11 +1846,7 @@ ZEND_API zend_result zend_execute_scripts(int type, zval *retval, int file_count
 	va_start(files, file_count);
 	for (i = 0; i < file_count; i++) {
 		file_handle = va_arg(files, zend_file_handle *);
-		if (!file_handle) {
-			continue;
-		}
-
-		if (ret == FAILURE) {
+		if (!file_handle || ret == FAILURE) {
 			continue;
 		}
 
